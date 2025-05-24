@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Optional, Sequence, Tuple
+from typing import Any, Dict, Iterator, Optional, Sequence, Tuple
 
 
 class Module:
@@ -32,12 +32,17 @@ class Module:
     def train(self) -> None:
         """Set the mode of this module and all descendent modules to `train`."""
         # TODO: Implement for Task 0.4.
-        raise NotImplementedError("Need to implement for Task 0.4")
+        self._set_module_mode(self, training=True)
+
+    def _set_module_mode(self, module: Module, training: bool) -> None:
+        module.training = training  
+        for submodule in module._modules.values():
+            self._set_module_mode(submodule, training)
 
     def eval(self) -> None:
         """Set the mode of this module and all descendent modules to `eval`."""
         # TODO: Implement for Task 0.4.
-        raise NotImplementedError("Need to implement for Task 0.4")
+        self._set_module_mode(self, training=False)
 
     def named_parameters(self) -> Sequence[Tuple[str, Parameter]]:
         """Collect all the parameters of this module and its descendents.
@@ -48,12 +53,30 @@ class Module:
 
         """
         # TODO: Implement for Task 0.4.
-        raise NotImplementedError("Need to implement for Task 0.4")
+        return list(self._traverse_parameters("", self, return_name=True))
+
+    def _traverse_parameters(self, prefix: str, module: Module, return_name: bool = False) -> Iterator[Tuple[str, Parameter]]:
+        for name, param in module._parameters.items():
+            if prefix:
+                if return_name:
+                    yield prefix + "." + name, param
+                else:
+                    yield param
+            else:
+                if return_name:
+                    yield name, param
+                else:
+                    yield param
+        for name, submodule in module._modules.items():
+            if prefix:
+                yield from self._traverse_parameters(prefix + "." + name, submodule, return_name)
+            else:
+                yield from self._traverse_parameters(name, submodule, return_name)
 
     def parameters(self) -> Sequence[Parameter]:
         """Enumerate over all the parameters of this module and its descendents."""
         # TODO: Implement for Task 0.4.
-        raise NotImplementedError("Need to implement for Task 0.4")
+        return list(self._traverse_parameters("", self, return_name=False))
 
     def add_parameter(self, k: str, v: Any) -> Parameter:
         """Manually add a parameter. Useful helper for scalar parameters.
